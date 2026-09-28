@@ -45,13 +45,16 @@
     display:flex;
     flex-direction:column;
     background:var(--dark);
-    overflow-x:hidden;
   }
   header.site-header{
     display:flex;
     justify-content:center;
     align-items:center;
     padding:22px 0 14px;
+    position:sticky;
+    top:0;
+    z-index:100;
+    background:var(--dark);
   }
   header.site-header img{
     height:20px;
@@ -152,7 +155,7 @@
 
   footer.site-footer{
     text-align:center;
-    padding:26px 0 8px;
+    padding:26px 0 44px;
   }
   footer.site-footer a{
     color:var(--pink);
@@ -198,12 +201,12 @@
     display:flex;
     flex-direction:column;
     justify-content:flex-start;
-    padding-top:98px;
+    padding-top:56px;
   }
   .quiz-logo{
     height:30px;
     width:auto;
-    margin-bottom:18px;
+    margin-top:20px;
   }
   .q-number{
     font-family:'Pretendard', sans-serif;
@@ -422,7 +425,6 @@
     </div>
 
     <div class="question-wrap">
-      <img class="quiz-logo" src="logo/Logo.svg" alt="Ctrl+K" onerror="handleLogoError(this)">
       <div class="q-number" id="q-num-label">Q1.</div>
       <div class="q-text" id="q-text">질문 텍스트</div>
       <div class="choices">
@@ -434,6 +436,7 @@
     <div class="quiz-nav">
       <button class="back-link" id="back-btn" onclick="goBack()">← 이전 질문</button>
     </div>
+    <img class="quiz-logo" src="logo/Logo.svg" alt="Ctrl+K" onerror="handleLogoError(this)">
   </section>
 
   <!-- ================= RESULT SCREEN ================= -->
