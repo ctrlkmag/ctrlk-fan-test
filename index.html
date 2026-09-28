@@ -198,7 +198,12 @@
     display:flex;
     flex-direction:column;
     justify-content:flex-start;
-    padding-top:120px;
+    padding-top:98px;
+  }
+  .quiz-logo{
+    height:30px;
+    width:auto;
+    margin-bottom:18px;
   }
   .q-number{
     font-family:'Pretendard', sans-serif;
@@ -417,6 +422,7 @@
     </div>
 
     <div class="question-wrap">
+      <img class="quiz-logo" src="logo/Logo.svg" alt="Ctrl+K" onerror="handleLogoError(this)">
       <div class="q-number" id="q-num-label">Q1.</div>
       <div class="q-text" id="q-text">질문 텍스트</div>
       <div class="choices">
