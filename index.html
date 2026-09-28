@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ctrl+K 아이돌 팬 성향 테스트</title>
+<meta name="description" content="나는 어떤 덕질 유형일까? Ctrl+K Magazine 아이돌 팬 성향 테스트">
+<script>
+  // 로고 이미지 로드 실패 시 대체 처리 (헤드에서 정의해 각 이미지보다 먼저 준비되도록 함)
+  function handleLogoError(img){
+    img.style.display = "none";
+    var fbId = img.dataset.fallback;
+    if(fbId){
+      var fb = document.getElementById(fbId);
+      if(fb) fb.style.display = "block";
+    }
+  }
+</script>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-subset.css">
+<style>
+  :root{
+    --pink:#FEC3EF;
+    --dark:#191919;
+    --white:#FFFFFF;
+    --gray:#8a8a8a;
+    --card:#232323;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--dark);
+    color:var(--white);
+    font-family:'Pretendard', sans-serif;
+    font-weight:400;
+    letter-spacing:-0.02em;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+  .app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    background:var(--dark);
+    overflow-x:hidden;
+  }
+  header.site-header{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:22px 0 14px;
+  }
+  header.site-header img{
+    height:28px;
+    width:auto;
+    display:block;
+  }
+  header.site-header .logo-fallback{
+    font-family:'Pretendard', sans-serif;
+    font-weight:700;
+    font-size:22px;
+    color:var(--pink);
+    display:none;
+  }
+  .screen{
+    display:none;
+    flex:1;
+    flex-direction:column;
+    padding:0 24px 40px;
+    animation:fadeIn .35s ease;
+  }
+  .screen.active{display:flex;}
+  @keyframes fadeIn{
+    from{opacity:0; transform:translateY(8px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ---------- START SCREEN ---------- */
+  #screen-start{align-items:center; text-align:center; justify-content:center; flex:1;}
+  .start-logo{
+    height:56px;
+    width:auto;
+    margin-bottom:22px;
+  }
+  .tag-pill{
+    background:var(--pink);
+    color:var(--dark);
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:2px;
+    padding:6px 16px;
+    border-radius:20px;
+    text-transform:uppercase;
+    margin-bottom:20px;
+  }
+  #screen-start h1{
+    font-family:'Pretendard', sans-serif;
+    font-weight:700;
+    font-size:34px;
+    line-height:1.3;
+    margin:0 0 16px;
+    color:var(--white);
+  }
+  #screen-start h1 span{color:var(--pink);}
+  #screen-start p.desc{
+    font-size:15px;
+    line-height:1.7;
+    color:#cfcfcf;
+    margin:0 0 34px;
+  }
+  .btn-primary{
+    background:var(--pink);
+    color:var(--dark);
+    border:none;
+    font-family:'Pretendard', sans-serif;
+    font-weight:700;
+    font-size:17px;
+    padding:17px 0;
+    width:100%;
+    border-radius:30px;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:0 8px 20px rgba(254,195,239,0.25);
+  }
+  .btn-primary:active{transform:scale(0.97);}
+  .btn-secondary{
+    background:transparent;
+    color:var(--white);
+    border:1.5px solid #444;
+    font-family:'Pretendard', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    padding:15px 0;
+    width:100%;
+    border-radius:30px;
+    cursor:pointer;
+    margin-top:12px;
+  }
+  .btn-secondary:active{transform:scale(0.97);}
+  .btn-outline-pink{
+    background:transparent;
+    color:var(--pink);
+    border:1.5px solid var(--pink);
+    font-family:'Pretendard', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    padding:15px 0;
+    width:100%;
+    border-radius:30px;
+    cursor:pointer;
+    margin-top:12px;
+  }
+  .btn-outline-pink:active{transform:scale(0.97);}
+
+  footer.site-footer{
+    text-align:center;
+    padding:26px 0 8px;
+  }
+  footer.site-footer a{
+    color:var(--pink);
+    text-decoration:none;
+    font-size:13px;
+    font-weight:700;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  footer.site-footer a:hover{text-decoration:underline;}
+
+  /* ---------- QUIZ SCREEN ---------- */
+  #screen-quiz{padding-top:8px;}
+  .progress-wrap{
+    margin:10px 0 6px;
+  }
+  .progress-info{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    color:#999;
+    margin-bottom:8px;
+    font-weight:700;
+  }
+  .progress-info span.current{color:var(--pink);}
+  .progress-track{
+    width:100%;
+    height:8px;
+    background:#2c2c2c;
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--pink), #ffd9f7);
+    border-radius:10px;
+    width:0%;
+    transition:width .35s ease;
+  }
+  .question-wrap{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding-top:30px;
+  }
+  .q-number{
+    font-family:'Pretendard', sans-serif;
+    font-weight:700;
+    color:var(--pink);
+    font-size:16px;
+    margin-bottom:10px;
+  }
+  .q-text{
+    font-family:'Pretendard', sans-serif;
+    font-size:22px;
+    font-weight:700;
+    line-height:1.45;
+    margin-bottom:34px;
+    color:var(--white);
+  }
+  .choices{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .choice-btn{
+    background:var(--card);
+    border:2px solid #333;
+    color:var(--white);
+    text-align:left;
+    padding:18px 18px;
+    border-radius:16px;
+    font-size:15px;
+    font-weight:500;
+    line-height:1.5;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .choice-btn:hover{
+    border-color:var(--pink);
+    background:#2a2426;
+  }
+  .choice-btn:active{
+    transform:scale(0.98);
+    background:var(--pink);
+    color:var(--dark);
+  }
+  .quiz-nav{
+    display:flex;
+    justify-content:flex-start;
+    padding-top:16px;
+  }
+  .back-link{
+    color:#888;
+    font-size:13px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:6px 0;
+  }
+  .back-link:hover{color:var(--pink);}
+
+  /* ---------- RESULT SCREEN ---------- */
+  #screen-result{padding-top:10px;}
+  .result-capture{
+    background:linear-gradient(160deg, var(--pink) 0%, #ffe3fb 100%);
+    border-radius:26px;
+    padding:34px 24px 30px;
+    color:var(--dark);
+    text-align:center;
+    margin-top:10px;
+  }
+  .result-logo{
+    height:26px;
+    width:auto;
+    margin-bottom:10px;
+  }
+  .result-capture .cap-tag{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:#8a4d80;
+    margin-bottom:2px;
+  }
+  .cap-tag-sub{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:#8a4d80;
+    opacity:.75;
+    margin-bottom:16px;
+  }
+  .result-emoji{
+    font-size:52px;
+    margin-bottom:10px;
+    line-height:1;
+  }
+  .result-title{
+    font-family:'Pretendard', sans-serif;
+    font-weight:700;
+    font-size:26px;
+    line-height:1.35;
+    margin:0 0 14px;
+    color:var(--dark);
+  }
+  .result-code{
+    display:inline-block;
+    background:var(--dark);
+    color:var(--pink);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:2px;
+    padding:5px 12px;
+    border-radius:20px;
+    margin-bottom:18px;
+  }
+  .result-desc{
+    font-size:14.5px;
+    line-height:1.75;
+    color:#3a2a37;
+    text-align:left;
+    margin-bottom:0;
+  }
+  .cap-footer{
+    margin-top:22px;
+    padding-top:16px;
+    border-top:1px solid rgba(138,77,128,0.25);
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:.5px;
+    color:#8a4d80;
+  }
+  .match-card{
+    background:var(--card);
+    border-radius:20px;
+    padding:22px 20px;
+    margin-top:18px;
+    text-align:left;
+  }
+  .match-card .match-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--pink);
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .match-card .match-title{
+    font-family:'Pretendard', sans-serif;
+    font-weight:700;
+    font-size:19px;
+    color:var(--white);
+    margin-bottom:10px;
+  }
+  .match-card .match-desc{
+    font-size:13.5px;
+    line-height:1.7;
+    color:#c9c9c9;
+  }
+  .result-actions{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-top:26px;
+  }
+
+  .toast{
+    position:fixed;
+    bottom:30px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--white);
+    color:var(--dark);
+    padding:12px 22px;
+    border-radius:30px;
+    font-size:13px;
+    font-weight:700;
+    opacity:0;
+    pointer-events:none;
+    transition:all .25s ease;
+    z-index:999;
+    white-space:nowrap;
+    box-shadow:0 6px 20px rgba(0,0,0,0.3);
+  }
+  .toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+
+  @media (min-width:480px){
+    .app{border-left:1px solid #262626; border-right:1px solid #262626;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="site-header">
+    <img id="logo-img" class="wordmark-logo" src="logo/ctrlkmag_white.svg" alt="Ctrl+K Magazine" data-fallback="logo-fallback" onerror="handleLogoError(this)">
+    <span id="logo-fallback" class="logo-fallback">Ctrl+K</span>
+  </header>
+
+  <!-- ================= START SCREEN ================= -->
+  <section id="screen-start" class="screen active">
+    <img class="start-logo" src="logo/Logo.svg" alt="Ctrl+K" onerror="handleLogoError(this)">
+    <div class="tag-pill">CTRL+K MAGAZINE · FAN TEST</div>
+    <h1>내 <span>덕질 성향</span>은<br>어떤 타입일까?</h1>
+    <p class="desc">
+      덕질 장소부터 애정 표현, 소통 스타일, 덕메 관계까지<br>
+      12가지 질문으로 알아보는 <b>나의 찐 팬심 유형</b>.<br>
+      16가지 결과 중 내 타입을 지금 확인해보세요.
+    </p>
+
+    <button class="btn-primary" onclick="startQuiz()" style="margin-top:8px;">테스트 시작하기</button>
+  </section>
+
+  <!-- ================= QUIZ SCREEN ================= -->
+  <section id="screen-quiz" class="screen">
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <span><span class="current" id="q-current">1</span> / 12</span>
+        <span id="q-percent">8%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <div class="question-wrap">
+      <div class="q-number" id="q-num-label">Q1.</div>
+      <div class="q-text" id="q-text">질문 텍스트</div>
+      <div class="choices">
+        <button class="choice-btn" id="choice-a" onclick="selectAnswer('A')"></button>
+        <button class="choice-btn" id="choice-b" onclick="selectAnswer('B')"></button>
+      </div>
+    </div>
+
+    <div class="quiz-nav">
+      <button class="back-link" id="back-btn" onclick="goBack()">← 이전 질문</button>
+    </div>
+  </section>
+
+  <!-- ================= RESULT SCREEN ================= -->
+  <section id="screen-result" class="screen">
+    <div class="result-capture" id="result-capture">
+      <img class="result-logo" src="logo/Logo.svg" alt="Ctrl+K" onerror="handleLogoError(this)" data-fallback="result-logo-fallback">
+      <div class="cap-tag" id="result-logo-fallback" style="display:none;">Ctrl+K Magazine</div>
+      <div class="cap-tag-sub">Fan Test</div>
+      <div class="result-emoji" id="result-emoji">💌</div>
+      <h2 class="result-title" id="result-title">결과 타입</h2>
+      <div class="result-code" id="result-code">CODE</div>
+      <p class="result-desc" id="result-desc">결과 설명</p>
+      <div class="cap-footer">@ctrlk.mag</div>
+    </div>
+
+    <div class="match-card">
+      <div class="match-label">💘 찰떡 궁합 유형</div>
+      <div class="match-title" id="match-title">궁합 타입</div>
+      <div class="match-desc" id="match-desc">궁합 설명</div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn-primary" onclick="saveResultImage()">결과 이미지 저장하기</button>
+      <button class="btn-outline-pink" onclick="shareResult()">테스트 공유하기</button>
+      <button class="btn-secondary" onclick="restartQuiz()">테스트 다시하기</button>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <a href="https://www.instagram.com/ctrlk.mag/" target="_blank" rel="noopener">
+      📷 Ctrl+K Magazine 인스타 바로가기
+    </a>
+  </footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+/* =========================================================
+   Ctrl+K 아이돌 팬 성향 테스트
+   축1: H(가성비 안방덕질형 — 안방파+가성비) / O(과소비 직관러형 — 직관파+과소비)
+        ※ 덕질 장소 + 소비 성향을 하나로 합친 축. axis:0 질문 작성 시
+          "어디서 덕질하는지"뿐 아니라 "얼마나/어떻게 소비하는지"도 함께 반영할 것
+   축2: L(유사연애/결혼형) / P(육아/모성애/집사형)
+   축3: D(데일리/일상소통형) / A(알맹이/사진형)
+   축4: S(같순좋아형) / J(같순견제형)
+========================================================= */
+
+const QUESTIONS = [
+  { axis:0, text:"새벽에 컴백 뮤직비디오가 떴다! 당신은?",
+    a:{label:"이불 속에서 조명 끄고 바로 정주행, 집이 제일 편해", v:"H"},
+    b:{label:"일단 티켓팅 사이트부터 켠다, 실물로 봐야 믿긴다", v:"O"} },
+  { axis:1, text:"최애가 무대에서 살짝 실수했다. 나의 반응은?",
+    a:{label:"그런 허당미까지 사랑스러워… 심장 폭행이다", v:"L"},
+    b:{label:"아이고 내 새끼 떨었나보네, 토닥토닥 해주고 싶다", v:"P"} },
+  { axis:2, text:"최애의 SNS 업로드, 어떤 스타일이 좋아?",
+    a:{label:"매일매일 짧은 셀카나 한마디라도 자주 올려줬으면", v:"D"},
+    b:{label:"자주 안 와도 되니까, 올 때 제대로 화보처럼 찍어서", v:"A"} },
+  { axis:3, text:"트친이 “저도 최애가 같아요!”라고 하면?",
+    a:{label:"완전 반가워! 바로 맞팔하고 덕질 메이트 시작", v:"S"},
+    b:{label:"어… 반갑긴 한데 살짝 신경 쓰이는 건 사실", v:"J"} },
+  { axis:0, text:"최애 콘서트 티켓팅 날, 나의 상태는?",
+    a:{label:"고화질 직캠 풀리길 기다리며 집에서 대기, 이게 편해", v:"H"},
+    b:{label:"연차까지 쓰고 피케팅 참전, 이건 무조건 가야 함", v:"O"} },
+  { axis:1, text:"최애를 부를 때 나는 주로?",
+    a:{label:"'여보' 급 애칭으로 부르며 알콩달콩 상상한다", v:"L"},
+    b:{label:"'우리 애기', '내 새끼'처럼 부모 마음으로 부른다", v:"P"} },
+  { axis:2, text:"이상적인 브이로그 업로드 주기는?",
+    a:{label:"짧고 가벼워도 매일 올라오는 게 최고", v:"D"},
+    b:{label:"한 달에 한 번이어도 고퀄리티 알맹이면 충분", v:"A"} },
+  { axis:3, text:"같은 최애 덕메가 콘서트 맨 앞자리를 잡았다!",
+    a:{label:"내 일처럼 기쁘다, 축하 파티라도 열어주고 싶음", v:"S"},
+    b:{label:"축하는 하는데… 솔직히 조금 부러운 감정이 든다", v:"J"} },
+  { axis:0, text:"친구가 “이번 주말 뭐해?”라고 물으면?",
+    a:{label:"위버스 라이브 보면서 힐링할 예정, 나가기 싫어", v:"H"},
+    b:{label:"팬미팅·사인회 응모 결과 기다리는 중, 지방도 감", v:"O"} },
+  { axis:1, text:"최애의 브이로그, 어디에 제일 집중해서 보나?",
+    a:{label:"나만 바라봐주는 듯한 눈빛과 멘트에 설렌다", v:"L"},
+    b:{label:"밥은 잘 챙겨먹었는지, 잠은 잘 잤는지부터 체크", v:"P"} },
+  { axis:2, text:"최애 인스타그램에 바라는 점은?",
+    a:{label:"셀카 한 장이라도 매일매일 올려주는 다정함", v:"D"},
+    b:{label:"화보 같은 사진 몇 장, 가끔이어도 완벽하게", v:"A"} },
+  { axis:3, text:"팬덤 안에서 나의 태도는?",
+    a:{label:"같은 최애 팬들과 정보 나누고 친해지는 게 즐겁다", v:"S"},
+    b:{label:"굳이 안 친해져도 돼, 조용히 혼자 덕질할래", v:"J"} },
+];
+
+const RESULTS = {
+  HLDS:{ title:"매일이 설레는 안방 신혼형", emoji:"🛋️💌💰",
+    desc:"집이 콘서트장보다 편한 나, 최애는 곧 내 마음속 배우자예요! 매일 오는 소소한 소통 하나에도 심장이 콩닥콩닥, 최애의 인사 한마디면 하루 종일 행복 회로가 돌아요. 같은 최애를 좋아하는 덕메를 만나면 결혼식 부케 받듯 반갑고, 함께 애정을 나누는 게 더 즐거운 타입이에요. 티켓값도 교통비도 안 드니 지갑은 언제나 여유만만, 알뜰살뜰 가성비 최고의 안방 커플이에요." },
+  HLDJ:{ title:"나만 알고 싶은 안방 애인형", emoji:"🛋️🔒💰",
+    desc:"집에서 매일 최애의 소식을 확인하며 조용히 애정을 키우는 나, 최애는 이미 마음속 애인이에요. 매일 오는 소통에 설레지만, 같은 최애를 좋아하는 사람이 늘어나는 건 은근히 신경 쓰여요. 애정은 크지만 나눔에는 서툰, 새신랑·새신부 스타일이에요. 돈 들일 일 없이도 사랑은 넘쳐나는, 조용하지만 알뜰한 가성비 로맨스예요." },
+  HLAS:{ title:"가끔 와도 심쿵하는 집순이 커플형", emoji:"🛋️📸💰",
+    desc:"자주 안 와도 괜찮아요, 어차피 최애가 주는 건 다 알짜니까요! 집에서 여유롭게 기다리다가 완벽한 사진 한 장에 연애하듯 설레는 타입이에요. 같은 최애를 좋아하는 사람들과 함께 감상하며 덕질의 기쁨을 나누는 걸 좋아하는 다정한 연인형이에요. 많이 안 써도 행복할 수 있다는 걸 아는, 소소하지만 알찬 가성비 커플이에요." },
+  HLAJ:{ title:"비밀연애 즐기는 은둔 애인형", emoji:"🛋️🤫💰",
+    desc:"조용히 집에서, 가끔 오는 알짜 소식만으로도 충분히 행복해요. 최애를 향한 마음은 은밀하고 깊어서, 남들에게 티내기보단 혼자 간직하고 싶어하는 스타일이에요. 같은 최애 팬이 있다는 걸 알면 괜히 신경 쓰이는, '비밀연애' 감성 만렙 덕후예요. 지갑 사정 걱정 없이 마음만 가득 채우는, 은근히 알뜰한 가성비 연애형이에요." },
+  HPDS:{ title:"다 같이 키우는 온라인 육아일기형", emoji:"🛋️👶💰",
+    desc:"최애는 내 새끼! 매일매일 잘 먹고 잘 자는지 확인해야 마음이 놓이는 집콕 육아형 덕후예요. 같은 최애를 아끼는 덕메들과 함께 정보를 나누고 걱정하는 걸 좋아해서, 온라인 공동육아방이 있다면 제일 활발하게 참여할 타입이에요. 굿즈보다 마음이 먼저인, 적게 써도 크게 사랑하는 가성비 육아형이에요." },
+  HPDJ:{ title:"혼자 애지중지 극성 집사형", emoji:"🛋️🔐💰",
+    desc:"매일 최애의 컨디션을 체크하는 게 하루 일과인 극성 보호자형 덕후예요. 애정이 넘치는 만큼 '내가 제일 잘 챙긴다'는 자부심도 강해서, 다른 팬이 내 새끼를 챙기는 모습엔 은근히 신경이 쓰여요. 집에서 조용히, 그러나 열정적으로 육아일기를 쓰는 스타일이에요. 내 새끼한텐 아낌없이, 근데 지갑은 사수하는 알뜰한 가성비 부모예요." },
+  HPAS:{ title:"가끔 와도 반가운 다같이 이모삼촌단형", emoji:"🛋️📷💰",
+    desc:"바쁜 최애, 가끔 와도 괜찮아요! 대신 올 때는 건강하고 예쁜 모습만 보여주길 바라는 여유로운 육아형 덕후예요. 같은 최애를 아끼는 팬들과 함께 '우리 애 잘 컸다'며 훈훈하게 이야기 나누는, 팬덤계의 인자한 이모삼촌 포지션이에요. 쓸 땐 쓰고 안 쓸 땐 안 쓰는, 야무진 가성비 이모삼촌단이에요." },
+  HPAJ:{ title:"나 혼자 키우는 나홀로 보호자형", emoji:"🛋️🤐💰",
+    desc:"자주 안 와도 되니까, 대신 올 때 건강하고 완벽한 모습으로만 와줬으면 하는 은둔 보호자형이에요. 최애를 향한 애정은 조용하지만 깊어서, '내가 제일 잘 안다'는 마음이 커요. 다른 팬과 애정을 나누기보단 혼자 조용히 지켜보고 싶은 스타일이에요. 많이 안 써도 마음만은 세상에서 제일 큰, 조용한 가성비 보호자예요." },
+  OLDS:{ title:"매일 직진하는 오프러버형", emoji:"🎫💌💸",
+    desc:"콘서트, 팬싸, 사녹까지 다 가야 하는 행동파 연애형 덕후예요! 매일 오는 소통에도 설레고, 현장에서 눈 마주치는 순간을 위해 살아요. 같은 최애를 좋아하는 덕메와 함께 현장을 누비며 우정도 애정도 두 배로 쌓는 타입이에요. 이번 달 카드값은 무섭지만 후회는 1도 없는, 화끈한 과소비 연애형이에요." },
+  OLDJ:{ title:"몰래 보고 싶은 그림자 연애형", emoji:"🎫🔒💸",
+    desc:"현장은 무조건 가야 하지만, 최애를 향한 마음은 나만의 비밀로 간직하고 싶은 은밀한 연애형이에요. 매일 오는 소통 하나에도 설레지만, 같은 최애를 좋아하는 사람이 많아지는 건 살짝 불편해요. 티켓팅은 전투적으로, 애정 표현은 조용하게 하는 반전 매력의 덕후예요. 티켓팅엔 돈 아끼지 않는, 몰래 지르는 과소비 그림자 연애형이에요." },
+  OLAS:{ title:"만나면 불타는 팬싸 커플형", emoji:"🎫📸💸",
+    desc:"자주 안 만나도 괜찮아요, 팬싸에서 눈 한 번 마주치면 그걸로 한 달을 살아요! 현장에서 제대로 된 알짜 소통을 즐기는 화끈한 연애형 덕후로, 같은 최애를 좋아하는 사람들과 후기를 나누며 덕질의 열기를 더 뜨겁게 불태우는 타입이에요. 팬싸 한 번을 위해 통장을 탈탈 털어도 행복한, 화끈한 과소비 커플이에요." },
+  OLAJ:{ title:"홀로 직관 다니는 은둔 로맨티스트형", emoji:"🎫🤫💸",
+    desc:"현장은 꼭 가야 하지만, 정작 애정 표현은 혼자 조용히 간직하는 은둔 로맨티스트예요. 자주 안 와도 되는 대신 현장에서만큼은 완벽한 순간을 원하고, 같은 최애 팬이 늘어나는 건 은근히 신경 쓰이는 편이에요. 혼자 티켓팅하고 혼자 감동받는, 쿨한 듯 뜨거운 스타일이에요. 현장을 위해선 지갑 사정 안 따지는, 조용히 지르는 과소비 로맨티스트예요." },
+  OPDS:{ title:"다 함께 뛰는 원정 육아단형", emoji:"🚌👶💸",
+    desc:"내 새끼 보러 콘서트, 팬미팅 다 가야 하는 행동파 육아형이에요! 매일 오는 소식에도 안심하고, 현장에서 같은 최애를 키우는 덕메들과 만나면 반가운 학부모 모임처럼 신나요. 팬덤계의 활발한 원정 육아단 리더 포지션이에요. 내 새끼 보러 가는 길엔 돈 계산 안 하는, 화끈한 과소비 육아단이에요." },
+  OPDJ:{ title:"나 홀로 상경하는 열혈 부모형", emoji:"🚌🔐💸",
+    desc:"내 새끼 보러 어디든 달려가는 열혈 보호자, 그런데 애정은 나만의 것이었으면 하는 편이에요. 매일 오는 소식으로 안심하다가도, 다른 팬이 내 새끼를 챙기면 은근히 견제하게 돼요. 현장은 화려하게, 마음은 조용히 지키는 극성 부모형이에요. 원정길엔 카드부터 챙기는, 열혈 과소비 부모형이에요." },
+  OPAS:{ title:"응원봉 들고 다 같이 응원하는 육아회형", emoji:"🚌📷💸",
+    desc:"자주 안 와도 되니까, 현장에서 건강하고 멋진 모습만 보여주면 그걸로 충분한 여유로운 육아형이에요. 같은 최애를 키우는 팬들과 응원봉 흔들며 함께 응원하는 걸 좋아해서, 팬덤 내 분위기를 훈훈하게 만드는 마당발 학부모 스타일이에요. 응원봉이며 슬로건이며 다 사고 보는, 화끈한 과소비 육아회예요." },
+  OPAJ:{ title:"조용히 홀로 챙기는 은둔 보호자형", emoji:"🚌🤐💸",
+    desc:"현장은 꼭 챙기지만, 애정 표현은 극히 조용한 은둔 보호자형이에요. 자주 안 와도 되니 올 때 건강한 모습만 보여주길 바라고, 다른 팬과 애정을 나누기보단 혼자 지켜보고 싶어해요. 조용하지만 그 누구보다 단단한 애정을 가진 덕후예요. 조용해도 지를 땐 확실히 지르는, 은둔형 과소비 보호자예요." },
+};
+
+// 궁합: 덕질 장소+소비 성향(축1)만 반대인 타입끼리 매칭 (나머지 성향 100% 동일)
+function getMatchCode(code){
+  const flipped = (code[0]==="H" ? "O" : "H") + code.slice(1);
+  return flipped;
+}
+function getMatchDesc(matchTitle){
+  return `덕질 장소와 소비 스타일만 다를 뿐, 최애를 향한 마음이나 소통 스타일, 팬덤 내 태도까지 놀랍도록 닮은 케미 조합이에요. '${matchTitle}'과 함께라면 현장 후기와 집콕 감상평, 영수증 자랑까지 나누며 서로의 덕질 인생을 더 풍성하게 채워줄 수 있어요.`;
+}
+
+let currentQ = 0;
+let answers = []; // {axis, v}
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function startQuiz(){
+  currentQ = 0;
+  answers = [];
+  showScreen("screen-quiz");
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[currentQ];
+  document.getElementById("q-current").textContent = currentQ+1;
+  document.getElementById("q-percent").textContent = Math.round(((currentQ)/12)*100)+"%";
+  document.getElementById("progress-fill").style.width = ((currentQ)/12*100)+"%";
+  document.getElementById("q-num-label").textContent = "Q"+(currentQ+1)+".";
+  document.getElementById("q-text").textContent = q.text;
+  document.getElementById("choice-a").textContent = q.a.label;
+  document.getElementById("choice-b").textContent = q.b.label;
+  document.getElementById("back-btn").style.visibility = currentQ===0 ? "hidden" : "visible";
+}
+
+function selectAnswer(which){
+  const q = QUESTIONS[currentQ];
+  const chosen = which==="A" ? q.a.v : q.b.v;
+  answers[currentQ] = { axis:q.axis, v:chosen };
+
+  if(currentQ < QUESTIONS.length-1){
+    currentQ++;
+    renderQuestion();
+  } else {
+    document.getElementById("progress-fill").style.width = "100%";
+    document.getElementById("q-percent").textContent = "100%";
+    setTimeout(showResult, 250);
+  }
+}
+
+function goBack(){
+  if(currentQ>0){
+    currentQ--;
+    renderQuestion();
+  }
+}
+
+function computeCode(){
+  const axisPairs = [["H","O"],["L","P"],["D","A"],["S","J"]];
+  const tally = [{},{},{},{}];
+  answers.forEach(a=>{
+    tally[a.axis][a.v] = (tally[a.axis][a.v]||0) + 1;
+  });
+  let code = "";
+  for(let i=0;i<4;i++){
+    const [x,y] = axisPairs[i];
+    code += (tally[i][x]||0) >= (tally[i][y]||0) ? x : y;
+  }
+  return code;
+}
+
+function showResult(){
+  const code = computeCode();
+  const result = RESULTS[code];
+  const matchCode = getMatchCode(code);
+  const matchResult = RESULTS[matchCode];
+
+  document.getElementById("result-emoji").textContent = result.emoji;
+  document.getElementById("result-title").textContent = result.title;
+  document.getElementById("result-code").textContent = code;
+  document.getElementById("result-desc").textContent = result.desc;
+  document.getElementById("match-title").textContent = matchResult.title + " (" + matchCode + ")";
+  document.getElementById("match-desc").textContent = getMatchDesc(matchResult.title);
+
+  showScreen("screen-result");
+}
+
+function restartQuiz(){
+  showScreen("screen-start");
+}
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+function saveResultImage(){
+  const node = document.getElementById("result-capture");
+  if(typeof html2canvas === "undefined"){
+    showToast("이미지 저장 기능을 불러오지 못했어요");
+    return;
+  }
+  html2canvas(node, {backgroundColor:"#FEC3EF", scale:2}).then(canvas=>{
+    const link = document.createElement("a");
+    link.download = "ctrlk_fan_test_result.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    showToast("결과 이미지가 저장되었어요!");
+  }).catch(()=>{
+    showToast("이미지 저장에 실패했어요");
+  });
+}
+
+function shareResult(){
+  const title = document.getElementById("result-title").textContent;
+  const shareData = {
+    title: "Ctrl+K 아이돌 팬 성향 테스트",
+    text: `나의 덕질 성향은 "${title}"! 너도 테스트 해봐요 💌`,
+    url: window.location.href
+  };
+  if(navigator.share){
+    navigator.share(shareData).catch(()=>{});
+  } else {
+    const text = `${shareData.text}\n${shareData.url}`;
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(text).then(()=>{
+        showToast("링크가 복사되었어요! 공유해보세요");
+      }).catch(()=>{
+        showToast(text);
+      });
+    } else {
+      showToast("공유 링크: " + shareData.url);
+    }
+  }
+}
+</script>
+</body>
+</html>
