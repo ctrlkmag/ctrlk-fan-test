@@ -215,7 +215,7 @@
     height:30px;
     width:auto;
     margin-top:20px;
-    margin-bottom:-37px;
+    margin-bottom:-39px;
   }
   .q-number{
     font-family:'Pretendard', sans-serif;
@@ -370,6 +370,15 @@
     gap:10px;
     margin-top:26px;
   }
+  .result-actions-row{
+    display:flex;
+    gap:10px;
+  }
+  .result-actions-row .btn-outline-pink,
+  .result-actions-row .btn-secondary{
+    margin-top:0;
+    flex:1;
+  }
 
   .toast{
     position:fixed;
@@ -471,8 +480,10 @@
 
     <div class="result-actions">
       <button class="btn-primary" onclick="saveResultImage()">결과 이미지 저장하기</button>
-      <button class="btn-outline-pink" onclick="shareResult()">테스트 공유하기</button>
-      <button class="btn-secondary" onclick="restartQuiz()">테스트 다시하기</button>
+      <div class="result-actions-row">
+        <button class="btn-outline-pink" onclick="shareResult()">테스트 공유하기</button>
+        <button class="btn-secondary" onclick="restartQuiz()">테스트 다시하기</button>
+      </div>
     </div>
     <img class="quiz-logo" src="logo/Logo.svg" alt="Ctrl+K" onerror="handleLogoError(this)">
   </section>
