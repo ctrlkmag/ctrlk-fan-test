@@ -54,7 +54,7 @@
     padding:22px 0 14px;
   }
   header.site-header img{
-    height:28px;
+    height:20px;
     width:auto;
     display:block;
   }
@@ -267,13 +267,13 @@
   .result-capture{
     background:linear-gradient(160deg, var(--pink) 0%, #ffe3fb 100%);
     border-radius:26px;
-    padding:34px 24px 30px;
+    padding:50px 24px 40px;
     color:var(--dark);
     text-align:center;
     margin-top:10px;
   }
   .result-logo{
-    height:26px;
+    height:31px;
     width:auto;
     margin-bottom:10px;
   }
@@ -324,15 +324,6 @@
     color:#3a2a37;
     text-align:left;
     margin-bottom:0;
-  }
-  .cap-footer{
-    margin-top:22px;
-    padding-top:16px;
-    border-top:1px solid rgba(138,77,128,0.25);
-    font-size:11.5px;
-    font-weight:700;
-    letter-spacing:.5px;
-    color:#8a4d80;
   }
   .match-card{
     background:var(--card);
@@ -400,7 +391,7 @@
 <div class="app">
 
   <header class="site-header">
-    <img id="logo-img" class="wordmark-logo" src="logo/ctrlkmag_white.svg" alt="Ctrl+K Magazine" data-fallback="logo-fallback" onerror="handleLogoError(this)">
+    <img id="logo-img" class="wordmark-logo" src="logo/ctrlkmag_pink.svg" alt="Ctrl+K Magazine" data-fallback="logo-fallback" onerror="handleLogoError(this)">
     <span id="logo-fallback" class="logo-fallback">Ctrl+K</span>
   </header>
 
@@ -447,14 +438,13 @@
   <!-- ================= RESULT SCREEN ================= -->
   <section id="screen-result" class="screen">
     <div class="result-capture" id="result-capture">
-      <img class="result-logo" src="logo/Logo.svg" alt="Ctrl+K" onerror="handleLogoError(this)" data-fallback="result-logo-fallback">
+      <img class="result-logo" src="logo/Logo_black.svg" alt="Ctrl+K" onerror="handleLogoError(this)" data-fallback="result-logo-fallback">
       <div class="cap-tag" id="result-logo-fallback" style="display:none;">Ctrl+K Magazine</div>
       <div class="cap-tag-sub">Fan Test</div>
       <div class="result-emoji" id="result-emoji">💌</div>
       <h2 class="result-title" id="result-title">결과 타입</h2>
       <div class="result-code" id="result-code">CODE</div>
       <p class="result-desc" id="result-desc">결과 설명</p>
-      <div class="cap-footer">@ctrlk.mag</div>
     </div>
 
     <div class="match-card">
