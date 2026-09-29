@@ -230,7 +230,6 @@
     font-size:22px;
     font-weight:700;
     line-height:1.45;
-    min-height:64px;
     margin-bottom:34px;
     color:var(--white);
   }
@@ -245,9 +244,6 @@
     color:var(--white);
     text-align:left;
     padding:18px 18px;
-    min-height:81px;
-    display:flex;
-    align-items:center;
     border-radius:16px;
     font-size:15px;
     font-weight:500;
@@ -442,9 +438,9 @@
         <button class="choice-btn" id="choice-a" onclick="selectAnswer('A')"></button>
         <button class="choice-btn" id="choice-b" onclick="selectAnswer('B')"></button>
       </div>
-      <button class="back-link" id="back-btn" onclick="goBack()">← 이전 질문</button>
     </div>
 
+    <button class="back-link" id="back-btn" onclick="goBack()">← 이전 질문</button>
     <img class="quiz-logo" src="logo/Logo.svg" alt="Ctrl+K" onerror="handleLogoError(this)">
   </section>
 
