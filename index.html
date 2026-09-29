@@ -260,18 +260,15 @@
     background:var(--pink);
     color:var(--dark);
   }
-  .quiz-nav{
-    display:flex;
-    justify-content:flex-start;
-    padding-top:16px;
-  }
   .back-link{
+    align-self:flex-start;
     color:#888;
     font-size:13px;
     background:none;
     border:none;
     cursor:pointer;
     padding:6px 0;
+    margin-top:16px;
   }
   .back-link:hover{color:var(--pink);}
 
@@ -441,11 +438,9 @@
         <button class="choice-btn" id="choice-a" onclick="selectAnswer('A')"></button>
         <button class="choice-btn" id="choice-b" onclick="selectAnswer('B')"></button>
       </div>
-    </div>
-
-    <div class="quiz-nav">
       <button class="back-link" id="back-btn" onclick="goBack()">← 이전 질문</button>
     </div>
+
     <img class="quiz-logo" src="logo/Logo.svg" alt="Ctrl+K" onerror="handleLogoError(this)">
   </section>
 
