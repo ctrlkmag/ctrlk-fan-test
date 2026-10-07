@@ -387,16 +387,16 @@
   }
   .check-list li{
     position:relative;
-    padding:7px 0 7px 26px;
+    padding:4px 0 4px 26px;
     font-size:14px;
-    line-height:1.55;
+    line-height:1.4;
     color:var(--dark);
   }
   .check-list li::before{
     content:"";
     position:absolute;
     left:0;
-    top:11px;
+    top:6px;
     width:12px;
     height:12px;
     border:1.5px solid var(--dark);
@@ -451,7 +451,9 @@
     pointer-events:none;
     transition:all .25s ease;
     z-index:999;
-    white-space:nowrap;
+    white-space:normal;
+    text-align:center;
+    max-width:calc(100vw - 32px);
     box-shadow:0 6px 20px rgba(0,0,0,0.3);
   }
   .toast.show{
@@ -906,11 +908,13 @@ function restartQuiz(){
   showScreen("screen-start");
 }
 
-function showToast(msg){
+let toastTimer = null;
+function showToast(msg, ms){
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.add("show");
-  setTimeout(()=>t.classList.remove("show"), 2200);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), ms || 2200);
 }
 
 // viewBox만 있고 width/height가 없는 SVG는 캡처 시 기본 크기(300x150)로 잘려 찍혀서,
@@ -938,40 +942,233 @@ function canvasToBlob(canvas){
   });
 }
 
-// 폰/브라우저마다 캔버스 보안(SecurityError)이나 메모리 한계로 실패할 수 있어서,
-// 화질을 조금씩 낮추고 문제가 될 만한 요소(SVG)를 바꿔가며 될 때까지 재시도한다.
-async function captureBlob(node, imgs){
-  const strategies = [
-    { scale:2,   svg:"utf8" },
-    { scale:2,   svg:"base64" },
-    { scale:1.5, svg:"base64" },
-    { scale:1,   svg:"none" }
-  ];
-  let lastErr;
-  for(const st of strategies){
+// html2canvas를 쓰지 않고 캔버스에 직접 그리는 방식.
+// 어떤 폰에서 html2canvas가 SecurityError로 막혀도 저장이 되도록 하는 마지막 안전장치다.
+const TAPE_POINTS = [[4,0],[100,0],[104,2],[101,4],[103,7],[99,9],[104,12],[100,14],[103,17],[101,19],[104,22],[100,24],[102,26],[5,26],[0,24],[3,22],[1,19],[4,17],[0,14],[3,12],[1,9],[4,7],[0,5],[3,3],[1,1]];
+
+function parseRadii(cs, w, h){
+  const r = ["borderTopLeftRadius","borderTopRightRadius","borderBottomRightRadius","borderBottomLeftRadius"].map(k=>{
+    const v = parseFloat(cs[k]) || 0;
+    return Math.min(v, w/2, h/2);
+  });
+  return r;
+}
+
+function fillRoundRect(ctx, x, y, w, h, radii){
+  ctx.beginPath();
+  if(ctx.roundRect){ ctx.roundRect(x, y, w, h, radii); }
+  else{
+    const [tl,tr,br,bl] = radii;
+    ctx.moveTo(x+tl, y);
+    ctx.lineTo(x+w-tr, y); ctx.quadraticCurveTo(x+w, y, x+w, y+tr);
+    ctx.lineTo(x+w, y+h-br); ctx.quadraticCurveTo(x+w, y+h, x+w-br, y+h);
+    ctx.lineTo(x+bl, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-bl);
+    ctx.lineTo(x, y+tl); ctx.quadraticCurveTo(x, y, x+tl, y);
+    ctx.closePath();
+  }
+  ctx.fill();
+}
+
+function effectiveOpacity(el, root){
+  let o = 1;
+  for(let n = el; n && n !== root.parentNode; n = n.parentNode){
+    if(n.nodeType === 1) o *= parseFloat(getComputedStyle(n).opacity) || 1;
+  }
+  return o;
+}
+
+async function drawManualCanvas(node){
+  const scale = 2;
+  const box = node.getBoundingClientRect();
+  const W = Math.round(box.width), H = Math.round(box.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = W*scale; canvas.height = H*scale;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
+  ctx.fillStyle = "#FEC3EF";
+  ctx.fillRect(0, 0, W, H);
+
+  // 배경 그라데이션 (160deg)
+  {
+    const cs = getComputedStyle(node);
+    const rad = 160 * Math.PI / 180;
+    const dx = Math.sin(rad), dy = -Math.cos(rad);
+    const len = Math.abs(W*dx) + Math.abs(H*dy);
+    const cx = W/2, cy = H/2;
+    const g = ctx.createLinearGradient(cx - dx*len/2, cy - dy*len/2, cx + dx*len/2, cy + dy*len/2);
+    g.addColorStop(0, "#FEC3EF"); g.addColorStop(1, "#ffe3fb");
+    ctx.fillStyle = g;
+    fillRoundRect(ctx, 0, 0, W, H, parseRadii(cs, W, H));
+  }
+
+  const rel = el => { const r = el.getBoundingClientRect(); return {x:r.left-box.left, y:r.top-box.top, w:r.width, h:r.height}; };
+  const isHidden = el => { for(let n = el; n && n !== node.parentNode; n = n.parentNode){ if(n.nodeType === 1 && getComputedStyle(n).display === "none") return true; } return false; };
+
+  // 배경이 있는 요소 (카드, 알약, 막대 칸 등)
+  for(const el of node.querySelectorAll("*")){
+    if(el.classList.contains("memo-tape") || isHidden(el)) continue;
+    const cs = getComputedStyle(el);
+    const m = cs.backgroundColor.match(/rgba?\(([^)]+)\)/);
+    if(!m) continue;
+    const parts = m[1].split(",").map(s=>parseFloat(s));
+    const a = parts.length > 3 ? parts[3] : 1;
+    if(a === 0) continue;
+    const r = rel(el);
+    if(r.w <= 0 || r.h <= 0) continue;
+    ctx.save();
+    const sh = cs.boxShadow.match(/rgba?\([^)]+\)\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+([\d.]+)px/);
+    if(sh){
+      ctx.shadowColor = cs.boxShadow.match(/rgba?\([^)]+\)/)[0];
+      ctx.shadowOffsetX = parseFloat(sh[1]); ctx.shadowOffsetY = parseFloat(sh[2]); ctx.shadowBlur = parseFloat(sh[3]);
+    }
+    ctx.fillStyle = cs.backgroundColor;
+    fillRoundRect(ctx, r.x, r.y, r.w, r.h, parseRadii(cs, r.w, r.h));
+    ctx.restore();
+  }
+
+  // 체크박스 (::before 가상요소라 직접 그린다)
+  for(const li of node.querySelectorAll(".check-list li")){
+    const r = rel(li);
+    ctx.save();
+    ctx.fillStyle = "#fff"; ctx.strokeStyle = "#191919"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if(ctx.roundRect) ctx.roundRect(r.x+0.75, r.y+6+0.75, 13.5, 13.5, 2); else ctx.rect(r.x+0.75, r.y+6+0.75, 13.5, 13.5);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 테이프
+  for(const t of node.querySelectorAll(".memo-tape")){
+    const r = rel(t);
+    const mt = getComputedStyle(t).transform.match(/matrix\(([^)]+)\)/);
+    const ang = mt ? Math.atan2(parseFloat(mt[1].split(",")[1]), parseFloat(mt[1].split(",")[0])) : 0;
+    ctx.save();
+    ctx.translate(r.x + r.w/2, r.y + r.h/2);
+    ctx.rotate(ang);
+    ctx.translate(-52, -13);
+    ctx.globalCompositeOperation = "multiply";
+    ctx.fillStyle = "rgba(138,77,128,0.55)";
+    ctx.beginPath();
+    TAPE_POINTS.forEach((p,i)=>{ i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); });
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  // 로고 이미지: 따로 작은 캔버스에 그려보고 안전할 때만 옮긴다 (막히면 글자로 대체)
+  for(const img of node.querySelectorAll("img")){
+    if(isHidden(img)) continue;
+    const r = rel(img);
+    let drawn = false;
     try{
-      if(st.svg === "base64"){
-        await Promise.all(imgs.map(async img=>{
-          img.src = await sizedSvgSrc(img.dataset.origSrc, true);
-          try{ await img.decode(); }catch(e){}
-        }));
+      const src = await sizedSvgSrc(img.dataset.origSrc || img.getAttribute("src"), true);
+      const im = new Image();
+      im.src = src;
+      await im.decode();
+      const c2 = document.createElement("canvas");
+      c2.width = Math.round(r.w*scale); c2.height = Math.round(r.h*scale);
+      c2.getContext("2d").drawImage(im, 0, 0, c2.width, c2.height);
+      c2.getContext("2d").getImageData(0, 0, 1, 1); // 막혀 있으면 여기서 에러
+      ctx.drawImage(c2, r.x, r.y, r.w, r.h);
+      drawn = true;
+    }catch(e){ console.error("로고 그리기 실패", e); }
+    if(!drawn){
+      ctx.save();
+      ctx.fillStyle = "#191919"; ctx.font = "700 20px Pretendard, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("Ctrl+K", r.x + r.w/2, r.y + r.h/2);
+      ctx.restore();
+    }
+  }
+
+  // 글자 (줄바꿈된 줄마다 따로 그린다)
+  const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+  const range = document.createRange();
+  let tn;
+  while((tn = walker.nextNode())){
+    const parent = tn.parentElement;
+    if(!parent || !tn.nodeValue.trim() || isHidden(parent)) continue;
+    const cs = getComputedStyle(parent);
+    ctx.save();
+    ctx.font = cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+    ctx.fillStyle = cs.color;
+    ctx.globalAlpha = effectiveOpacity(parent, node);
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+    if("letterSpacing" in ctx) ctx.letterSpacing = cs.letterSpacing === "normal" ? "0px" : cs.letterSpacing;
+    const upper = cs.textTransform === "uppercase";
+    const text = tn.nodeValue;
+    const lines = [];
+    let cur = null, i = 0;
+    for(const ch of text){
+      range.setStart(tn, i); range.setEnd(tn, i + ch.length);
+      const rects = range.getClientRects();
+      i += ch.length;
+      if(!rects.length || rects[0].width === 0 && ch !== " "){
+        if(cur) cur.text += ch; // 변형 선택자 등
+        continue;
       }
-      const canvas = await html2canvas(node, {
-        backgroundColor:"#FEC3EF", scale:st.scale, useCORS:true, logging:false,
-        scrollX:-window.scrollX, scrollY:-window.scrollY,
-        onclone:(doc)=>{
-          const tapes = doc.querySelectorAll(".memo-tape");
-          tapes.forEach(t=>{
-            if(st.svg === "none") t.style.display = "none";
-            else if(st.svg === "base64") t.style.backgroundImage = 'url("data:image/svg+xml;base64,'+TAPE_SVG_B64+'")';
-          });
-          if(st.svg === "none") doc.querySelectorAll("#result-capture img").forEach(i=>{ i.style.display = "none"; });
+      const rc = rects[0];
+      if(!cur || Math.abs(rc.top - cur.top) > 3){
+        if(ch === " ") continue;
+        cur = {text:"", left:rc.left - box.left, top:rc.top, bottom:rc.bottom};
+        lines.push(cur);
+      }
+      cur.text += ch;
+    }
+    for(const ln of lines){
+      const s = (upper ? ln.text.toUpperCase() : ln.text).replace(/\s+$/, "");
+      if(!s) continue;
+      ctx.fillText(s, ln.left, (ln.top + ln.bottom)/2 - box.top);
+    }
+    ctx.restore();
+  }
+  return canvas;
+}
+
+// 폰/브라우저마다 캔버스 보안(SecurityError)이나 메모리 한계로 실패할 수 있어서,
+// 방식을 바꿔가며 될 때까지 재시도하고, 한 번 성공한 방식은 기억해 다음에 먼저 쓴다.
+async function captureBlob(node, imgs, report){
+  const strategies = [
+    { id:"A", scale:2,   svg:"utf8" },
+    { id:"B", scale:2,   svg:"base64" },
+    { id:"C", manual:true },
+    { id:"D", scale:1,   svg:"none" }
+  ];
+  let start = 0;
+  try{ const saved = localStorage.getItem("ctrlk_save_strategy"); const k = strategies.findIndex(s=>s.id === saved); if(k > 0) start = k; }catch(e){}
+  const order = strategies.slice(start).concat(strategies.slice(0, start));
+  let lastErr;
+  for(const st of order){
+    try{
+      let canvas;
+      if(st.manual){
+        canvas = await drawManualCanvas(node);
+      } else {
+        if(st.svg === "base64"){
+          await Promise.all(imgs.map(async img=>{
+            img.src = await sizedSvgSrc(img.dataset.origSrc, true);
+            try{ await img.decode(); }catch(e){}
+          }));
         }
-      });
-      return await canvasToBlob(canvas);
+        canvas = await html2canvas(node, {
+          backgroundColor:"#FEC3EF", scale:st.scale, useCORS:true, logging:false,
+          scrollX:-window.scrollX, scrollY:-window.scrollY,
+          onclone:(doc)=>{
+            doc.querySelectorAll(".memo-tape").forEach(t=>{
+              if(st.svg === "none") t.style.display = "none";
+              else if(st.svg === "base64") t.style.backgroundImage = 'url("data:image/svg+xml;base64,'+TAPE_SVG_B64+'")';
+            });
+            if(st.svg === "none") doc.querySelectorAll("#result-capture img").forEach(i=>{ i.style.display = "none"; });
+          }
+        });
+      }
+      const blob = await canvasToBlob(canvas);
+      try{ localStorage.setItem("ctrlk_save_strategy", st.id); }catch(e){}
+      return blob;
     }catch(e){
       lastErr = e;
-      console.error("이미지 생성 실패 ("+st.scale+"x, svg:"+st.svg+")", e);
+      report.push(st.id + ":" + ((e && e.name) || "Error"));
+      console.error("이미지 생성 실패 ("+st.id+")", e);
     }
   }
   throw lastErr;
@@ -1007,6 +1204,7 @@ async function saveResultImage(){
   }
   const imgs = [...node.querySelectorAll("img")].filter(i=>/\.svg(\?|$)/i.test(i.getAttribute("src")||""));
   const originals = imgs.map(i=>i.getAttribute("src"));
+  const report = [];
   try{
     showToast("이미지를 만들고 있어요...");
     imgs.forEach(img=>{ img.dataset.origSrc = img.getAttribute("src"); });
@@ -1014,7 +1212,7 @@ async function saveResultImage(){
       img.src = await sizedSvgSrc(img.dataset.origSrc);
       try{ await img.decode(); }catch(e){}
     }));
-    const blob = await captureBlob(node, imgs);
+    const blob = await captureBlob(node, imgs, report);
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if(isMobile){
       openSaveModal(blob);
@@ -1031,7 +1229,7 @@ async function saveResultImage(){
     }
   }catch(e){
     console.error("이미지 저장 실패", e);
-    showToast("이미지 저장에 실패했어요 ("+((e && e.name) || "error")+")");
+    showToast("이미지 저장에 실패했어요 ("+(report.join(" ") || (e && e.name) || "error")+")", 6000);
     window.lastSaveError = e;
   }finally{
     imgs.forEach((img,i)=>{ img.src = originals[i]; });
