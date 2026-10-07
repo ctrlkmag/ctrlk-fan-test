@@ -296,7 +296,6 @@
   .export-mode .result-logo,
   .export-mode .result-code{align-self:center;}
   .export-mode .result-title{font-size:44px; margin-bottom:14px;}
-  .export-mode .result-emoji{font-size:30px; margin-bottom:12px;}
   .export-mode .stat-plain{margin-top:34px; padding:0 12px;}
   .export-mode .result-suffix{margin-bottom:8px;}
   .export-mode .memo-card{margin-top:38px; padding:22px 24px 14px;}
@@ -307,7 +306,6 @@
   .result-capture:not(.export-mode){padding:30px 20px 26px;}
   .result-capture:not(.export-mode) .result-logo{margin-bottom:6px;}
   .result-capture:not(.export-mode) .cap-tag-sub{margin-bottom:10px;}
-  .result-capture:not(.export-mode) .result-emoji{margin-bottom:6px;}
   .result-capture:not(.export-mode) .result-title{font-size:30px; margin-bottom:8px;}
   .result-capture:not(.export-mode) .result-code{margin-bottom:8px;}
   .result-capture:not(.export-mode) .result-suffix{margin-bottom:4px;}
@@ -335,11 +333,6 @@
     color:#8a4d80;
     opacity:.75;
     margin-bottom:16px;
-  }
-  .result-emoji{
-    font-size:26px;
-    margin-bottom:10px;
-    line-height:1;
   }
   .result-title{
     font-family:'Pretendard', sans-serif;
@@ -412,7 +405,7 @@
     height:10px;
     background:rgba(255,255,255,0.7);
   }
-  .stat-seg.on{background:var(--dark);}
+  .stat-seg.on{background:#8a4d80;}
   .stat-seg:first-child{border-radius:6px 0 0 6px;}
   .stat-seg:last-child{border-radius:0 6px 6px 0;}
   .check-list{
@@ -574,7 +567,6 @@
       <img class="result-logo" src="logo/Logo_black.svg" alt="Ctrl+K" onerror="handleLogoError(this)" data-fallback="result-logo-fallback">
       <div class="cap-tag" id="result-logo-fallback" style="display:none;">Ctrl+K Magazine</div>
       <div class="cap-tag-sub">Ctrl+K Magazine · FAN TEST</div>
-      <div class="result-emoji" id="result-emoji">💌</div>
       <h2 class="result-title" id="result-title">결과 타입</h2>
       <div class="result-code" id="result-code">CODE</div>
       <div class="result-suffix" id="result-suffix"></div>
@@ -919,7 +911,6 @@ function showResult(){
   const matchCode = getMatchCode(code);
   const matchResult = RESULTS[matchCode];
 
-  document.getElementById("result-emoji").textContent = result.emoji;
   document.getElementById("result-title").textContent = result.title;
   const info = SUFFIX_INFO[computeSuffix()];
   document.getElementById("result-code").textContent = info ? info.name : "";
