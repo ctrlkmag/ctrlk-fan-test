@@ -296,7 +296,8 @@
   .export-mode .result-logo,
   .export-mode .result-code{align-self:center;}
   .export-mode .result-title{font-size:44px; margin-bottom:14px;}
-  .export-mode .result-emoji{font-size:60px; margin-bottom:10px;}
+  .export-mode .result-emoji{font-size:30px; margin-bottom:12px;}
+  .export-mode .stat-plain{margin-top:34px; padding:0 12px;}
   .export-mode .result-suffix{margin-bottom:8px;}
   .export-mode .memo-card{margin-top:38px; padding:22px 24px 14px;}
   .export-mode .stat-row{padding:8px 0;}
@@ -324,7 +325,7 @@
     margin-bottom:16px;
   }
   .result-emoji{
-    font-size:52px;
+    font-size:26px;
     margin-bottom:10px;
     line-height:1;
   }
@@ -373,8 +374,10 @@
     background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='104' height='26' viewBox='0 0 104 26' preserveAspectRatio='none'%3E%3Cpolygon fill='rgb(138,77,128)' fill-opacity='0.55' points='4,0 100,0 104,2 101,4 103,7 99,9 104,12 100,14 103,17 101,19 104,22 100,24 102,26 5,26 0,24 3,22 1,19 4,17 0,14 3,12 1,9 4,7 0,5 3,3 1,1'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
     mix-blend-mode:multiply;
   }
-  .memo-card + .memo-card .memo-tape{
-    transform:translateX(-50%) rotate(1.2deg);
+  .stat-plain{
+    margin-top:28px;
+    padding:0 6px;
+    text-align:left;
   }
   .stat-row{
     display:flex;
@@ -395,7 +398,7 @@
   .stat-seg{
     flex:1;
     height:10px;
-    background:#cdcdcd;
+    background:rgba(255,255,255,0.7);
   }
   .stat-seg.on{background:var(--dark);}
   .stat-seg:first-child{border-radius:6px 0 0 6px;}
@@ -567,8 +570,7 @@
         <div class="memo-tape"></div>
         <ul class="check-list" id="result-lines"></ul>
       </div>
-      <div class="memo-card">
-        <div class="memo-tape"></div>
+      <div class="stat-plain">
         <div id="stat-rows"></div>
       </div>
     </div>
