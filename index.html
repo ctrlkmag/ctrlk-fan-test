@@ -325,6 +325,12 @@
     letter-spacing:2px;
     padding:5px 12px;
     border-radius:20px;
+    margin-bottom:10px;
+  }
+  .result-suffix{
+    font-size:12px;
+    font-weight:700;
+    color:#8a4d80;
     margin-bottom:18px;
   }
   .result-desc{
@@ -411,7 +417,7 @@
       <h1>내 <span>덕질 성향</span>은<br>어떤 타입일까?</h1>
       <p class="desc">
         덕질 장소부터 덕심 공개 범위, 소통 스타일, 덕메 관계까지<br>
-        12가지 질문으로 알아보는 <b>나의 찐 덕질 유형</b>.<br>
+        13가지 질문으로 알아보는 <b>나의 찐 덕질 유형</b>.<br>
         16가지 결과 중 내 타입을 지금 확인해보세요.
       </p>
 
@@ -423,7 +429,7 @@
   <section id="screen-quiz" class="screen">
     <div class="progress-wrap">
       <div class="progress-info">
-        <span><span class="current" id="q-current">1</span> / 12</span>
+        <span><span class="current" id="q-current">1</span> / <span id="q-total">13</span></span>
         <span id="q-percent">8%</span>
       </div>
       <div class="progress-track">
@@ -453,6 +459,7 @@
       <div class="result-emoji" id="result-emoji">💌</div>
       <h2 class="result-title" id="result-title">결과 타입</h2>
       <div class="result-code" id="result-code">CODE</div>
+      <div class="result-suffix" id="result-suffix"></div>
       <p class="result-desc" id="result-desc">결과 설명</p>
     </div>
 
@@ -490,6 +497,7 @@
    축2: C(일코형 — 덕심을 드러내지 않음) / B(자랑형 — 덕심을 적극 공개)
    축3: D(데일리/일상소통형) / A(알맹이/사진형)
    축4: S(같순좋아형) / J(같순견제형)
+   축5(보너스): L(장기연애파) / T(환승연애파) — 유형은 그대로, 결과 코드 뒤에 -L / -T 로만 붙음
 ========================================================= */
 
 const QUESTIONS = [
@@ -529,7 +537,15 @@ const QUESTIONS = [
   { axis:3, text:"팬덤 안에서 나의 태도는?",
     a:{label:"같은 최애 팬들과 정보 나누고 친해지는 게 즐겁다", v:"S"},
     b:{label:"혼자서 덕질하기에도 충분해! 구독계로 덕질할래", v:"J"} },
+  { axis:4, text:"내 덕질 역사를 한마디로 요약하자면?",
+    a:{label:"난 한 놈만 팬다... 한 번 품은 최애는 뼈를 묻을 때까지 최소 몇 년은 기본! 내 청춘을 다 바친 지조 있는 순정파.", v:"L"},
+    b:{label:"세상에 잘생기고 예쁜 애가 얼마나 많은데! 마음속 다세대 주택에 다 같이 품고 산다.", v:"T"} },
 ];
+
+const SUFFIX_INFO = {
+  L:"장기연애파 · 한 번 품은 최애는 끝까지 순정파",
+  T:"환승연애파 · 마음속 다세대 주택 거주 중",
+};
 
 const RESULTS = {
   HCDS:{ title:"집에서만 불타는 일코 덕메러형", emoji:"🛋️🤫💰",
@@ -593,8 +609,10 @@ function startQuiz(){
 function renderQuestion(){
   const q = QUESTIONS[currentQ];
   document.getElementById("q-current").textContent = currentQ+1;
-  document.getElementById("q-percent").textContent = Math.round(((currentQ)/12)*100)+"%";
-  document.getElementById("progress-fill").style.width = ((currentQ)/12*100)+"%";
+  const total = QUESTIONS.length;
+  document.getElementById("q-total").textContent = total;
+  document.getElementById("q-percent").textContent = Math.round((currentQ/total)*100)+"%";
+  document.getElementById("progress-fill").style.width = (currentQ/total*100)+"%";
   document.getElementById("q-num-label").textContent = "Q"+(currentQ+1)+".";
   document.getElementById("q-text").textContent = q.text;
   document.getElementById("choice-a").textContent = q.a.label;
@@ -628,7 +646,7 @@ function computeCode(){
   const axisPairs = [["H","O"],["C","B"],["D","A"],["S","J"]];
   const tally = [{},{},{},{}];
   answers.forEach(a=>{
-    tally[a.axis][a.v] = (tally[a.axis][a.v]||0) + 1;
+    if(a.axis<4) tally[a.axis][a.v] = (tally[a.axis][a.v]||0) + 1;
   });
   let code = "";
   for(let i=0;i<4;i++){
@@ -636,6 +654,12 @@ function computeCode(){
     code += (tally[i][x]||0) >= (tally[i][y]||0) ? x : y;
   }
   return code;
+}
+
+// 5번째 축(장기연애 L / 환승연애 T): 결과 유형은 바꾸지 않고 코드 뒤에 -L / -T 꼬리표로만 붙음
+function computeSuffix(){
+  const a = answers.find(x=>x && x.axis===4);
+  return a ? a.v : "";
 }
 
 function showResult(){
@@ -646,7 +670,9 @@ function showResult(){
 
   document.getElementById("result-emoji").textContent = result.emoji;
   document.getElementById("result-title").textContent = result.title;
-  document.getElementById("result-code").textContent = code;
+  const suffix = computeSuffix();
+  document.getElementById("result-code").textContent = suffix ? code + "-" + suffix : code;
+  document.getElementById("result-suffix").textContent = SUFFIX_INFO[suffix] || "";
   document.getElementById("result-desc").textContent = result.desc;
   document.getElementById("match-title").textContent = matchResult.title + " (" + matchCode + ")";
   document.getElementById("match-desc").textContent = getMatchDesc(matchResult.title);
