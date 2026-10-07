@@ -919,36 +919,66 @@ function showToast(msg){
 
 // viewBox만 있고 width/height가 없는 SVG는 캡처 시 기본 크기(300x150)로 잘려 찍혀서,
 // 저장하는 동안만 viewBox 크기를 width/height로 넣은 data URL로 바꿔 끼운다.
-async function sizedSvgSrc(src){
+async function sizedSvgSrc(src, base64){
   try{
     const txt = await (await fetch(src)).text();
     const m = txt.match(/viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"/);
     if(!m) return src;
     const sized = txt.replace(/<svg\b/, '<svg width="'+m[1]+'" height="'+m[2]+'"');
+    if(base64) return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(sized)));
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(sized);
   }catch(e){
     return src;
   }
 }
 
-async function renderCapture(node){
-  // 폰에서는 메모리/해상도 문제로 실패할 수 있어서 해상도를 낮춰가며 재시도한다.
-  let lastErr;
-  for(const scale of [2, 1.5, 1]){
-    try{
-      return await html2canvas(node, {
-        backgroundColor:"#FEC3EF", scale, useCORS:true, logging:false,
-        scrollX:-window.scrollX, scrollY:-window.scrollY
-      });
-    }catch(e){ lastErr = e; console.error("html2canvas 실패 (scale "+scale+")", e); }
-  }
-  throw lastErr;
-}
+const TAPE_SVG_B64 = btoa("<svg xmlns='http://www.w3.org/2000/svg' width='104' height='26' viewBox='0 0 104 26' preserveAspectRatio='none'><polygon fill='rgb(138,77,128)' fill-opacity='0.55' points='4,0 100,0 104,2 101,4 103,7 99,9 104,12 100,14 103,17 101,19 104,22 100,24 102,26 5,26 0,24 3,22 1,19 4,17 0,14 3,12 1,9 4,7 0,5 3,3 1,1'/></svg>");
 
 function canvasToBlob(canvas){
   return new Promise((resolve, reject)=>{
-    canvas.toBlob(b=> b ? resolve(b) : reject(new Error("toBlob")), "image/png");
+    try{
+      canvas.toBlob(b=> b ? resolve(b) : reject(new Error("toBlob")), "image/png");
+    }catch(e){ reject(e); }
   });
+}
+
+// 폰/브라우저마다 캔버스 보안(SecurityError)이나 메모리 한계로 실패할 수 있어서,
+// 화질을 조금씩 낮추고 문제가 될 만한 요소(SVG)를 바꿔가며 될 때까지 재시도한다.
+async function captureBlob(node, imgs){
+  const strategies = [
+    { scale:2,   svg:"utf8" },
+    { scale:2,   svg:"base64" },
+    { scale:1.5, svg:"base64" },
+    { scale:1,   svg:"none" }
+  ];
+  let lastErr;
+  for(const st of strategies){
+    try{
+      if(st.svg === "base64"){
+        await Promise.all(imgs.map(async img=>{
+          img.src = await sizedSvgSrc(img.dataset.origSrc, true);
+          try{ await img.decode(); }catch(e){}
+        }));
+      }
+      const canvas = await html2canvas(node, {
+        backgroundColor:"#FEC3EF", scale:st.scale, useCORS:true, logging:false,
+        scrollX:-window.scrollX, scrollY:-window.scrollY,
+        onclone:(doc)=>{
+          const tapes = doc.querySelectorAll(".memo-tape");
+          tapes.forEach(t=>{
+            if(st.svg === "none") t.style.display = "none";
+            else if(st.svg === "base64") t.style.backgroundImage = 'url("data:image/svg+xml;base64,'+TAPE_SVG_B64+'")';
+          });
+          if(st.svg === "none") doc.querySelectorAll("#result-capture img").forEach(i=>{ i.style.display = "none"; });
+        }
+      });
+      return await canvasToBlob(canvas);
+    }catch(e){
+      lastErr = e;
+      console.error("이미지 생성 실패 ("+st.scale+"x, svg:"+st.svg+")", e);
+    }
+  }
+  throw lastErr;
 }
 
 let saveModalUrl = null;
@@ -983,12 +1013,12 @@ async function saveResultImage(){
   const originals = imgs.map(i=>i.getAttribute("src"));
   try{
     showToast("이미지를 만들고 있어요...");
+    imgs.forEach(img=>{ img.dataset.origSrc = img.getAttribute("src"); });
     await Promise.all(imgs.map(async img=>{
-      img.src = await sizedSvgSrc(img.getAttribute("src"));
+      img.src = await sizedSvgSrc(img.dataset.origSrc);
       try{ await img.decode(); }catch(e){}
     }));
-    const canvas = await renderCapture(node);
-    const blob = await canvasToBlob(canvas);
+    const blob = await captureBlob(node, imgs);
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if(isMobile){
       openSaveModal(blob);
@@ -1006,6 +1036,7 @@ async function saveResultImage(){
   }catch(e){
     console.error("이미지 저장 실패", e);
     showToast("이미지 저장에 실패했어요 ("+((e && e.name) || "error")+")");
+    window.lastSaveError = e;
   }finally{
     imgs.forEach((img,i)=>{ img.src = originals[i]; });
   }
