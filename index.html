@@ -333,6 +333,53 @@
     color:#8a4d80;
     margin-bottom:18px;
   }
+  .stat-card{
+    position:relative;
+    margin-top:32px;
+    padding:22px 20px 16px;
+    background-color:#fffdf3;
+    background-image:
+      linear-gradient(rgba(25,25,25,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(25,25,25,0.06) 1px, transparent 1px);
+    background-size:22px 22px;
+    border-radius:14px;
+    box-shadow:0 6px 14px rgba(138,77,128,0.28);
+    text-align:left;
+  }
+  .stat-tape{
+    position:absolute;
+    top:-12px;
+    left:50%;
+    width:96px;
+    height:24px;
+    transform:translateX(-50%) rotate(-1.5deg);
+    background:rgba(214,234,222,0.95);
+    box-shadow:0 1px 2px rgba(0,0,0,0.08);
+  }
+  .stat-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:6px 0;
+  }
+  .stat-label{
+    flex:0 0 92px;
+    font-size:13px;
+    color:var(--dark);
+  }
+  .stat-bar{
+    flex:1;
+    display:flex;
+    gap:3px;
+  }
+  .stat-seg{
+    flex:1;
+    height:10px;
+    background:#cdcdcd;
+  }
+  .stat-seg.on{background:var(--dark);}
+  .stat-seg:first-child{border-radius:6px 0 0 6px;}
+  .stat-seg:last-child{border-radius:0 6px 6px 0;}
   .result-desc{
     font-size:14.5px;
     line-height:1.75;
@@ -461,6 +508,10 @@
       <div class="result-code" id="result-code">CODE</div>
       <div class="result-suffix" id="result-suffix"></div>
       <p class="result-desc" id="result-desc">결과 설명</p>
+      <div class="stat-card">
+        <div class="stat-tape"></div>
+        <div id="stat-rows"></div>
+      </div>
     </div>
 
     <div class="match-card">
@@ -542,10 +593,21 @@ const QUESTIONS = [
     b:{label:"세상에 잘생기고 예쁜 애가 얼마나 많은데! 마음속 다세대 주택에 다 같이 품고 산다.", v:"T"} },
 ];
 
+// 보너스 축(장기연애/환승연애): 결과 카드에 이름 + 한 줄 설명으로 표시
 const SUFFIX_INFO = {
-  L:"장기연애파 · 한 번 품은 최애는 끝까지 순정파",
-  T:"환승연애파 · 마음속 다세대 주택 거주 중",
+  L:{ name:"장기연애파", desc:"한 번 품은 최애는 끝까지 순정파" },
+  T:{ name:"환승연애파", desc:"마음속 다세대 주택 거주 중" },
 };
+
+// 능력치 막대 라벨 (각 축에서 내가 더 가까운 쪽의 이름)
+const STAT_LABELS = {
+  H:"가성비력", O:"YOLO력",
+  C:"일코력",   B:"자랑력",
+  E:"어덕행덕력", I:"과몰입력",
+  S:"덕메 친화력", J:"혼덕력",
+};
+// 그 축 3문항 중 내 쪽 선택 개수 → 채워지는 칸 수(총 5칸)
+const STAT_SEGMENTS = { 3:5, 2:3, 1:1, 0:0 };
 
 const RESULTS = {
   HCES:{ title:"느긋하게 즐기는 집콕 일코 덕메형", emoji:"🛋️🤫💰",
@@ -642,18 +704,56 @@ function goBack(){
   }
 }
 
-function computeCode(){
-  const axisPairs = [["H","O"],["C","B"],["E","I"],["S","J"]];
+const AXIS_PAIRS = [["H","O"],["C","B"],["E","I"],["S","J"]];
+
+function tallyAnswers(){
   const tally = [{},{},{},{}];
   answers.forEach(a=>{
-    if(a.axis<4) tally[a.axis][a.v] = (tally[a.axis][a.v]||0) + 1;
+    if(a && a.axis<4) tally[a.axis][a.v] = (tally[a.axis][a.v]||0) + 1;
   });
+  return tally;
+}
+
+function computeCode(){
+  const tally = tallyAnswers();
   let code = "";
   for(let i=0;i<4;i++){
-    const [x,y] = axisPairs[i];
+    const [x,y] = AXIS_PAIRS[i];
     code += (tally[i][x]||0) >= (tally[i][y]||0) ? x : y;
   }
   return code;
+}
+
+// 축별로 내가 더 가까운 쪽(pole)과 그쪽 선택 개수(count)
+function computeStats(){
+  const tally = tallyAnswers();
+  return AXIS_PAIRS.map(([x,y],i)=>{
+    const pole = (tally[i][x]||0) >= (tally[i][y]||0) ? x : y;
+    return { pole, count: tally[i][pole]||0 };
+  });
+}
+
+function renderStats(){
+  const box = document.getElementById("stat-rows");
+  box.innerHTML = "";
+  computeStats().forEach(s=>{
+    const row = document.createElement("div");
+    row.className = "stat-row";
+    const label = document.createElement("div");
+    label.className = "stat-label";
+    label.textContent = STAT_LABELS[s.pole];
+    const bar = document.createElement("div");
+    bar.className = "stat-bar";
+    const filled = STAT_SEGMENTS[s.count] || 0;
+    for(let i=0;i<5;i++){
+      const seg = document.createElement("span");
+      seg.className = "stat-seg" + (i<filled ? " on" : "");
+      bar.appendChild(seg);
+    }
+    row.appendChild(label);
+    row.appendChild(bar);
+    box.appendChild(row);
+  });
 }
 
 // 5번째 축(장기연애 L / 환승연애 T): 결과 유형은 바꾸지 않고 코드 뒤에 -L / -T 꼬리표로만 붙음
@@ -670,11 +770,12 @@ function showResult(){
 
   document.getElementById("result-emoji").textContent = result.emoji;
   document.getElementById("result-title").textContent = result.title;
-  const suffix = computeSuffix();
-  document.getElementById("result-code").textContent = suffix ? code + "-" + suffix : code;
-  document.getElementById("result-suffix").textContent = SUFFIX_INFO[suffix] || "";
+  const info = SUFFIX_INFO[computeSuffix()];
+  document.getElementById("result-code").textContent = info ? info.name : "";
+  document.getElementById("result-suffix").textContent = info ? info.desc : "";
   document.getElementById("result-desc").textContent = result.desc;
-  document.getElementById("match-title").textContent = matchResult.title + " (" + matchCode + ")";
+  renderStats();
+  document.getElementById("match-title").textContent = matchResult.title;
   document.getElementById("match-desc").textContent = getMatchDesc(matchResult.title);
 
   showScreen("screen-result");
@@ -691,21 +792,44 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove("show"), 2200);
 }
 
-function saveResultImage(){
+// viewBox만 있고 width/height가 없는 SVG는 캡처 시 기본 크기(300x150)로 잘려 찍혀서,
+// 저장하는 동안만 viewBox 크기를 width/height로 넣은 data URL로 바꿔 끼운다.
+async function sizedSvgSrc(src){
+  try{
+    const txt = await (await fetch(src)).text();
+    const m = txt.match(/viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"/);
+    if(!m) return src;
+    const sized = txt.replace(/<svg\b/, '<svg width="'+m[1]+'" height="'+m[2]+'"');
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(sized);
+  }catch(e){
+    return src;
+  }
+}
+
+async function saveResultImage(){
   const node = document.getElementById("result-capture");
   if(typeof html2canvas === "undefined"){
     showToast("이미지 저장 기능을 불러오지 못했어요");
     return;
   }
-  html2canvas(node, {backgroundColor:"#FEC3EF", scale:2}).then(canvas=>{
+  const imgs = [...node.querySelectorAll("img")].filter(i=>/\.svg(\?|$)/i.test(i.getAttribute("src")||""));
+  const originals = imgs.map(i=>i.getAttribute("src"));
+  try{
+    await Promise.all(imgs.map(async img=>{
+      img.src = await sizedSvgSrc(img.getAttribute("src"));
+      try{ await img.decode(); }catch(e){}
+    }));
+    const canvas = await html2canvas(node, {backgroundColor:"#FEC3EF", scale:2});
     const link = document.createElement("a");
     link.download = "ctrlk_fan_test_result.png";
     link.href = canvas.toDataURL("image/png");
     link.click();
     showToast("결과 이미지가 저장되었어요!");
-  }).catch(()=>{
+  }catch(e){
     showToast("이미지 저장에 실패했어요");
-  });
+  }finally{
+    imgs.forEach((img,i)=>{ img.src = originals[i]; });
+  }
 }
 
 function shareResult(){
