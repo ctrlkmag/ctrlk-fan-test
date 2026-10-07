@@ -282,6 +282,26 @@
     text-align:center;
     margin-top:10px;
   }
+  /* 이미지 저장용 4:3(가로 600 x 세로 800) 카드: 화면 밖에서만 쓰인다 */
+  .result-capture.export-mode{
+    box-sizing:border-box;
+    width:600px;
+    height:800px;
+    margin:0;
+    padding:40px 44px 36px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .export-mode .result-logo,
+  .export-mode .result-code{align-self:center;}
+  .export-mode .result-title{font-size:44px; margin-bottom:14px;}
+  .export-mode .result-emoji{font-size:60px; margin-bottom:10px;}
+  .export-mode .result-suffix{margin-bottom:8px;}
+  .export-mode .memo-card{margin-top:38px; padding:22px 24px 14px;}
+  .export-mode .stat-row{padding:8px 0;}
+  .export-mode .check-list li{font-size:15px;}
+  .export-mode .stat-label{font-size:14px;}
   .result-logo{
     height:31px;
     width:auto;
@@ -1158,7 +1178,7 @@ async function captureBlob(node, imgs, report){
               if(st.svg === "none") t.style.display = "none";
               else if(st.svg === "base64") t.style.backgroundImage = 'url("data:image/svg+xml;base64,'+TAPE_SVG_B64+'")';
             });
-            if(st.svg === "none") doc.querySelectorAll("#result-capture img").forEach(i=>{ i.style.display = "none"; });
+            if(st.svg === "none") doc.querySelectorAll(".result-capture.export-mode img").forEach(i=>{ i.style.display = "none"; });
           }
         });
       }
@@ -1197,13 +1217,20 @@ function openSaveModal(blob){
 }
 
 async function saveResultImage(){
-  const node = document.getElementById("result-capture");
   if(typeof html2canvas === "undefined"){
     showToast("이미지 저장 기능을 불러오지 못했어요");
     return;
   }
+  // 화면에 보이는 카드와 별개로, 4:3(가로 600 x 세로 800) 비율의 저장용 카드를 화면 밖에 만들어서 캡처한다.
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "position:fixed; left:-10000px; top:0; width:600px; pointer-events:none;";
+  const node = document.getElementById("result-capture").cloneNode(true);
+  node.removeAttribute("id");
+  node.querySelectorAll("[id]").forEach(el=>el.removeAttribute("id"));
+  node.classList.add("export-mode");
+  wrap.appendChild(node);
+  document.body.appendChild(wrap);
   const imgs = [...node.querySelectorAll("img")].filter(i=>/\.svg(\?|$)/i.test(i.getAttribute("src")||""));
-  const originals = imgs.map(i=>i.getAttribute("src"));
   const report = [];
   try{
     showToast("이미지를 만들고 있어요...");
@@ -1232,7 +1259,7 @@ async function saveResultImage(){
     showToast("이미지 저장에 실패했어요 ("+(report.join(" ") || (e && e.name) || "error")+")", 6000);
     window.lastSaveError = e;
   }finally{
-    imgs.forEach((img,i)=>{ img.src = originals[i]; });
+    wrap.remove();
   }
 }
 
