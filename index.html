@@ -462,6 +462,24 @@
     opacity:1;
     transform:translateX(-50%) translateY(0);
   }
+  .save-modal{
+    position:fixed; inset:0; z-index:500;
+    background:rgba(0,0,0,0.88);
+    display:none; flex-direction:column; align-items:center;
+    padding:20px 20px 24px; overflow-y:auto;
+  }
+  .save-modal.show{display:flex;}
+  .save-modal-hint{
+    color:var(--white); font-size:14px; font-weight:700;
+    text-align:center; line-height:1.5; margin:4px 0 14px;
+  }
+  .save-modal img{
+    width:100%; max-width:360px; height:auto;
+    border-radius:14px; -webkit-touch-callout:default; user-select:auto;
+  }
+  .save-modal-actions{
+    width:100%; max-width:360px; display:flex; flex-direction:column; gap:10px; margin-top:16px;
+  }
 
   @media (min-width:480px){
     .app{border-left:1px solid #262626; border-right:1px solid #262626;}
@@ -559,6 +577,14 @@
 
 </div>
 
+<div class="save-modal" id="save-modal">
+  <p class="save-modal-hint">이미지를 길게 눌러서 사진첩에 저장해요 📷</p>
+  <img id="save-modal-img" alt="Ctrl+K 팬 성향 테스트 결과">
+  <div class="save-modal-actions">
+    <button class="btn-primary" id="save-modal-share" type="button" style="display:none">사진 앱으로 저장 · 공유하기</button>
+    <button class="btn-secondary" type="button" onclick="closeSaveModal()">닫기</button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -905,6 +931,48 @@ async function sizedSvgSrc(src){
   }
 }
 
+async function renderCapture(node){
+  // 폰에서는 메모리/해상도 문제로 실패할 수 있어서 해상도를 낮춰가며 재시도한다.
+  let lastErr;
+  for(const scale of [2, 1.5, 1]){
+    try{
+      return await html2canvas(node, {
+        backgroundColor:"#FEC3EF", scale, useCORS:true, logging:false,
+        scrollX:-window.scrollX, scrollY:-window.scrollY
+      });
+    }catch(e){ lastErr = e; console.error("html2canvas 실패 (scale "+scale+")", e); }
+  }
+  throw lastErr;
+}
+
+function canvasToBlob(canvas){
+  return new Promise((resolve, reject)=>{
+    canvas.toBlob(b=> b ? resolve(b) : reject(new Error("toBlob")), "image/png");
+  });
+}
+
+let saveModalUrl = null;
+function closeSaveModal(){
+  document.getElementById("save-modal").classList.remove("show");
+  if(saveModalUrl){ URL.revokeObjectURL(saveModalUrl); saveModalUrl = null; }
+}
+
+// 폰에서는 a[download]가 막히는 경우가 많아서(인앱 브라우저, iOS 등) 이미지를 띄워 길게 눌러 저장하게 한다.
+function openSaveModal(blob){
+  if(saveModalUrl) URL.revokeObjectURL(saveModalUrl);
+  saveModalUrl = URL.createObjectURL(blob);
+  document.getElementById("save-modal-img").src = saveModalUrl;
+  const shareBtn = document.getElementById("save-modal-share");
+  const file = new File([blob], "ctrlk_fan_test_result.png", {type:"image/png"});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    shareBtn.style.display = "block";
+    shareBtn.onclick = ()=>{ navigator.share({files:[file]}).catch(()=>{}); };
+  } else {
+    shareBtn.style.display = "none";
+  }
+  document.getElementById("save-modal").classList.add("show");
+}
+
 async function saveResultImage(){
   const node = document.getElementById("result-capture");
   if(typeof html2canvas === "undefined"){
@@ -914,18 +982,30 @@ async function saveResultImage(){
   const imgs = [...node.querySelectorAll("img")].filter(i=>/\.svg(\?|$)/i.test(i.getAttribute("src")||""));
   const originals = imgs.map(i=>i.getAttribute("src"));
   try{
+    showToast("이미지를 만들고 있어요...");
     await Promise.all(imgs.map(async img=>{
       img.src = await sizedSvgSrc(img.getAttribute("src"));
       try{ await img.decode(); }catch(e){}
     }));
-    const canvas = await html2canvas(node, {backgroundColor:"#FEC3EF", scale:2});
-    const link = document.createElement("a");
-    link.download = "ctrlk_fan_test_result.png";
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-    showToast("결과 이미지가 저장되었어요!");
+    const canvas = await renderCapture(node);
+    const blob = await canvasToBlob(canvas);
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if(isMobile){
+      openSaveModal(blob);
+    } else {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = "ctrlk_fan_test_result.png";
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 4000);
+      showToast("결과 이미지가 저장되었어요!");
+    }
   }catch(e){
-    showToast("이미지 저장에 실패했어요");
+    console.error("이미지 저장 실패", e);
+    showToast("이미지 저장에 실패했어요 ("+((e && e.name) || "error")+")");
   }finally{
     imgs.forEach((img,i)=>{ img.src = originals[i]; });
   }
