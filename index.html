@@ -370,6 +370,9 @@
   }
   .result-name:empty{display:none;}
   .export-mode .result-name{font-size:22px; margin-bottom:8px;}
+  /* 이름을 입력하지 않았을 때는 이모지를 한 칸씩 띄워서 보여준다 */
+  .result-name.is-emoji{font-size:26px; line-height:1.2; margin-bottom:8px; letter-spacing:0; color:inherit;}
+  .export-mode .result-name.is-emoji{font-size:30px; margin-bottom:12px;}
   .result-title{
     font-family:'Pretendard', sans-serif;
     font-weight:700;
@@ -952,7 +955,16 @@ function showResult(){
   document.getElementById("result-title").textContent = result.title;
   const nameEl = document.getElementById("name-input");
   const userName = nameEl ? nameEl.value.trim().replace(/님$/, "").trim() : "";
-  document.getElementById("result-name").textContent = userName ? userName + "님은" : "";
+  const nameBox = document.getElementById("result-name");
+  if(userName){
+    nameBox.classList.remove("is-emoji");
+    nameBox.textContent = userName + "님은";
+  } else {
+    // 이름이 없으면 유형 이모지를 한 칸씩 띄워서 보여준다 (변형 선택자 포함해서 하나로 묶음)
+    const emojis = (result.emoji || "").match(/\p{Extended_Pictographic}️?/gu) || [];
+    nameBox.classList.add("is-emoji");
+    nameBox.textContent = emojis.join(" ");
+  }
   const info = SUFFIX_INFO[computeSuffix()];
   document.getElementById("result-code").textContent = info ? info.name : "";
   document.getElementById("result-suffix").textContent = info ? info.desc : "";
