@@ -16,6 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://ctrlkmag.github.io/ctrlk-fan-test/og-image.png">
 <link rel="icon" type="image/svg+xml" href="logo/Logo_black.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <script>
   // 로고 이미지 로드 실패 시 대체 처리 (헤드에서 정의해 각 이미지보다 먼저 준비되도록 함)
   function handleLogoError(img){
@@ -1325,7 +1326,7 @@ function shareResult(){
   const title = document.getElementById("result-title").textContent;
   const shareData = {
     title: "Ctrl+K 아이돌 팬 성향 테스트",
-    text: `나의 덕질 성향은 "${title}"! 너도 테스트 해봐요 💌`,
+    text: `나의 덕질 성향은 "${title}"! 너는 어떤 유형이야?`,
     url: window.location.href
   };
   if(navigator.share){
