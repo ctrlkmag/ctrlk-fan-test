@@ -128,6 +128,24 @@
     color:#cfcfcf;
     margin:0 0 34px;
   }
+  .name-input{
+    width:100%;
+    background:var(--card);
+    color:var(--white);
+    border:1.5px solid #444;
+    border-radius:30px;
+    padding:15px 18px;
+    font-family:'Pretendard', sans-serif;
+    font-size:15px;
+    font-weight:400;
+    letter-spacing:-0.02em;
+    text-align:center;
+    outline:none;
+    -webkit-appearance:none;
+    appearance:none;
+  }
+  .name-input::placeholder{color:#8a8a8a;}
+  .name-input:focus{border-color:var(--pink);}
   .btn-primary{
     background:var(--pink);
     color:var(--dark);
@@ -344,6 +362,14 @@
     opacity:.75;
     margin-bottom:16px;
   }
+  .result-name{
+    font-size:16px;
+    font-weight:700;
+    color:#8a4d80;
+    margin-bottom:6px;
+  }
+  .result-name:empty{display:none;}
+  .export-mode .result-name{font-size:22px; margin-bottom:8px;}
   .result-title{
     font-family:'Pretendard', sans-serif;
     font-weight:700;
@@ -542,7 +568,8 @@
         16가지 결과 중 내 타입을 지금 확인해보세요.
       </p>
 
-      <button class="btn-primary" onclick="startQuiz()" style="margin-top:8px;">테스트 시작하기</button>
+      <input class="name-input" id="name-input" type="text" maxlength="10" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="이름 또는 닉네임을 입력해 주세요" aria-label="이름 또는 닉네임" onkeydown="if(event.key==='Enter'){startQuiz();}">
+      <button class="btn-primary" onclick="startQuiz()" style="margin-top:12px;">테스트 시작하기</button>
     </div>
   </section>
 
@@ -577,6 +604,7 @@
       <img class="result-logo" src="logo/Logo_black.svg" alt="Ctrl+K" onerror="handleLogoError(this)" data-fallback="result-logo-fallback">
       <div class="cap-tag" id="result-logo-fallback" style="display:none;">Ctrl+K Magazine</div>
       <div class="cap-tag-sub">Ctrl+K Magazine · FAN TEST</div>
+      <div class="result-name" id="result-name"></div>
       <h2 class="result-title" id="result-title">결과 타입</h2>
       <div class="result-code" id="result-code">CODE</div>
       <div class="result-suffix" id="result-suffix"></div>
@@ -922,6 +950,9 @@ function showResult(){
   const matchResult = RESULTS[matchCode];
 
   document.getElementById("result-title").textContent = result.title;
+  const nameEl = document.getElementById("name-input");
+  const userName = nameEl ? nameEl.value.trim().replace(/님$/, "").trim() : "";
+  document.getElementById("result-name").textContent = userName ? userName + "님은" : "";
   const info = SUFFIX_INFO[computeSuffix()];
   document.getElementById("result-code").textContent = info ? info.name : "";
   document.getElementById("result-suffix").textContent = info ? info.desc : "";
