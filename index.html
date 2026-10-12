@@ -28,6 +28,23 @@
     }
   }
 </script>
+<script>
+  // 방문/이용 통계 (Google Analytics 4). 이름 입력값은 절대 보내지 않고, 로컬 개발 환경에서는 기록하지 않는다.
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  var ANALYTICS_ON = !(location.protocol === "file:" || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname));
+  if(ANALYTICS_ON){
+    var gaScript = document.createElement("script");
+    gaScript.async = true;
+    gaScript.src = "https://www.googletagmanager.com/gtag/js?id=G-0WCLXG9Q51";
+    document.head.appendChild(gaScript);
+    gtag("js", new Date());
+    gtag("config", "G-0WCLXG9Q51");
+  }
+  function track(name, params){
+    try{ if(ANALYTICS_ON) gtag("event", name, params || {}); }catch(e){}
+  }
+</script>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-subset.css">
 <style>
   :root{
@@ -847,6 +864,8 @@ function showScreen(id){
 }
 
 function startQuiz(){
+  const nameInput = document.getElementById("name-input");
+  track("test_start", { has_name: (nameInput && nameInput.value.trim()) ? "yes" : "no" });
   currentQ = 0;
   answers = [];
   showScreen("screen-quiz");
@@ -871,6 +890,7 @@ function selectAnswer(which){
   const q = QUESTIONS[currentQ];
   const chosen = which==="A" ? q.a.v : q.b.v;
   answers[currentQ] = { axis:q.axis, v:chosen };
+  track("question_answered", { question_number: currentQ + 1 });
 
   if(currentQ < QUESTIONS.length-1){
     currentQ++;
@@ -980,10 +1000,12 @@ function showResult(){
   document.getElementById("match-title").textContent = matchResult.title;
   document.getElementById("match-desc").textContent = getMatchDesc(matchResult.title);
 
+  track("test_complete", { result_type: result.title, result_code: code, tail: info ? info.name : "" });
   showScreen("screen-result");
 }
 
 function restartQuiz(){
+  track("test_retry");
   showScreen("screen-start");
 }
 
@@ -1280,6 +1302,7 @@ async function saveResultImage(){
     showToast("이미지 저장 기능을 불러오지 못했어요");
     return;
   }
+  track("save_image_click");
   // 화면에 보이는 카드와 별개로, 4:3(가로 600 x 세로 800) 비율의 저장용 카드를 화면 밖에 만들어서 캡처한다.
   const wrap = document.createElement("div");
   wrap.style.cssText = "position:fixed; left:-10000px; top:0; width:600px; pointer-events:none;";
@@ -1323,6 +1346,7 @@ async function saveResultImage(){
 }
 
 function shareResult(){
+  track("share_click");
   const title = document.getElementById("result-title").textContent;
   const shareData = {
     title: "Ctrl+K 케이팝 덕질 성향 테스트",
